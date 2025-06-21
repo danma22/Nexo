@@ -1,0 +1,350 @@
+{% extends 'layouts/base.html' %}
+
+{% block titulo %}
+    Organizador
+{% endblock titulo %}
+
+
+{% block scripts %}
+    <script>
+        $(function(){
+            $('.ui.dropdown').dropdown();
+
+            $('.archive-btn').click(function(e){
+                var url = $(this).data('url')
+                $('#archivarForm').attr('action', url)
+                $('#archivarForm').submit()
+            });
+
+            $('#btnCategory').on('click', function() {
+                $('#categoryForm')[0].reset();
+                $('#category').dropdown('clear');
+                $('#messageCategoryForm').removeClass('success error')
+                $('#messageCategoryForm').hide()
+                $('#modalCategoryForm').modal('show');
+            });
+
+            $('#categoryForm').submit(function(e){
+                e.preventDefault();
+
+                $.ajax({
+                    url: '{% url "crear-categoria" %}',
+                    type: 'POST',
+                    data: {
+                        name: $('input[name="name"]').val(),
+                        csrfmiddlewaretoken: '{{ csrf_token }}'
+                    },
+                    success: function(response) {
+                        if (response.success) {
+                            $('#messageCategoryForm').removeClass('error')
+                            $('#messageCategoryForm').addClass('success');
+                            $('#messageCategoryForm').text(response.message).show();
+                            $('#categoryForm')[0].reset();
+
+                            setTimeout(function() {
+                                $('#messageCategoryForm').hide()
+                                window.location.replace("{% url 'organizador' %}");
+                            }, 1000);
+                        } else {
+                            $('#messageCategoryForm').removeClass('success')
+                            $('#messageCategoryForm').addClass('error')
+                            $('#messageCategoryForm').text(response.message).show();
+                        }
+                    },
+                    error: function() {
+                        $('#messageCategoryForm').removeClass('success')
+                        $('#messageCategoryForm').addClass('error')
+                        $('#messageCategoryForm').text('Error al crear la categoría.').show();
+                    }
+                });
+            });
+
+            $('#categoryDeleteForm').submit(function(e){
+                e.preventDefault()
+
+                $.ajax({
+                    url: '{% url "borrar-categoria" %}',
+                    type: 'POST',
+                    data: {
+                        category_id: $('#category').val(),
+                        csrfmiddlewaretoken: '{{ csrf_token }}'
+                    },
+                    success: function(response) {
+                        if (response.success) {
+                            $('#messageCategoryForm').removeClass('error')
+                            $('#messageCategoryForm').addClass('success');
+                            $('#messageCategoryForm').text(response.message).show();
+                            $('#category').dropdown('clear');
+                            $('#category').dropdown('remove selected', response.id)
+
+                            setTimeout(function() {
+                                $('#messageCategoryForm').hide()
+                                window.location.replace("{% url 'organizador' %}");
+                            }, 1000);
+                        } else {
+                            $('#messageCategoryForm').removeClass('success')
+                            $('#messageCategoryForm').addClass('error')
+                            $('#messageCategoryForm').text(response.message).show();
+                        }
+                    },
+                    error: function(response) {
+                        $('#messageCategoryForm').removeClass('success')
+                        $('#messageCategoryForm').addClass('error')
+                        $('#messageCategoryForm').text('Error al borrar la categoría.').show();
+                    }
+                })
+            });
+
+            $('.delete-btn').click(function(e){
+                var url = $(this).data('url')
+                
+                $(this).blur()
+                $('#eliminarForm').attr('action', url)
+                $('#modalDeleteForm').modal('show')
+            });
+        });
+    </script>
+{% endblock scripts %}
+
+
+{% block styles %}
+    <style>
+        .truncate {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+        }
+    </style>
+{% endblock styles %}
+    
+
+{% block content %}
+    {% include 'layouts/partials/menu.html' %}
+    
+    <div class="ui container">
+        <div class="ui stackable grid">
+            {# Encabezado de la pagina #}
+            <div class="left floated left aligned six wide column">
+                <h2 class="ui header">
+                    <i class="tasks icon"></i>
+                    <div class="content">
+                        Organizador
+                    </div>
+                </h2>
+            </div>
+            
+            {# Fila de botones #}
+            <div class="right floated right aligned ten wide column">
+                <a href="{% url 'archivados' %}" class="ui violet button">
+                    <i class="archive icon"></i>
+                    Archivados
+                </a>
+
+                <button class="ui violet button" id="btnCategory">
+                    <i class="cubes icon"></i>
+                    Categorías
+                </button>
+
+                <div class="ui labeled button" tabindex="0">
+                    <a href="{% url 'crear-tarea' %}" class="ui violet button">
+                        <i class="sticky note outline icon"></i> Nueva tarea
+                    </a>
+                    <a class="ui basic left pointing violet label">
+                        {{ tasksFiltered.qs|length }}
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+
+        {# Mensajes #}
+        {% if messages %}
+            {% for message in messages %}
+                <div class="ui {{ message.tags }} message">
+                    <i class="close icon"></i>
+                    <div class="header">
+                        {% if message.tags == 'success' %}
+                            Operación exitosa
+                        {% elif message.tags == 'error' %}
+                            Ha ocurrido un error
+                        {% endif %}
+                    </div>
+                    <p>{{ message }}</p>
+                </div>
+            {% endfor %}
+        {% endif %}
+        
+        <div class="ui divider"></div>
+        
+        {# Filtros #}
+        <form method="get" class="ui form">
+            <div class="five fields">
+                <div class="field">
+                    {{ tasksFiltered.form.title.label_tag}}
+                    <div class="ui icon input">
+                        {{ tasksFiltered.form.title }}
+                        <i class="search icon"></i>
+                    </div>
+                    {{ tasksFiltered.form.title.errors }}
+                </div>
+                <div class="field">
+                    {{ tasksFiltered.form.category.label_tag }}
+                    {{ tasksFiltered.form.category }}
+                    {{ tasksFiltered.form.category.errors }}
+                </div>
+                <div class="field">
+                    {{ tasksFiltered.form.status.label_tag }}
+                    {{ tasksFiltered.form.status }}
+                    {{ tasksFiltered.form.status.errors }}
+                </div>
+                <div class="field" style="align-self: flex-end;">
+                    <button class="ui fluid button" type="submit">
+                        <i class="filter icon"></i>
+                        Filtrar
+                    </button>
+                </div>
+                <div class="field" style="align-self: flex-end;">
+                    <a href="{% url 'organizador' %}" class="ui fluid button">
+                        Limpiar filtro
+                    </a>
+                </div>
+            </div>
+        </form>
+
+        {# Tareas #}
+        {% if not tasksFiltered.qs %}
+            {# Mensaje de tareas vacías #}
+            <div class="ui icon message">
+                <i class="huge icons" style="margin-right: 10px;">
+                    <i class="sticky note outline icon"></i>
+                    <i class="top right corner question circle icon"></i>
+                </i>
+                <div class="content">
+                    <div class="header">
+                        ¿Sin nada que hacer?
+                    </div>
+                    <p>No se encontraron tareas registradas.</p>
+                </div>
+            </div>
+        {% else %}
+            <div class="ui three stackable cards">
+                {% for task in tasksFiltered.qs %}
+                    <div class="card">
+                        <div class="content">
+                            <div class="header">{{ task.title }}</div>
+                            <div class="meta">
+                                <span>Creado el {{ task.creation_date }}</span>
+                            </div>
+                        </div>
+                        <div class="content">
+                            <h4 class="ui sub header">Descripción</h4>
+                            <p class="truncate">{{ task.description }}</p>
+                            <div class="ui labels">
+                                {% if task.category %}
+                                    <div class="ui horizontal label">{{ task.category.name }}</div>
+                                {% endif %}
+                                <div class="ui {{ task.status.color }} horizontal label">
+                                    {% if task.status.status_id == 1 %}
+                                        <i class="hourglass half icon"></i>
+                                    {% elif task.status.status_id == 2 %}
+                                        <i class="check icon"></i>
+                                    {% else %}
+                                        <i class="archive icon"></i>
+                                    {% endif %}
+                                    {{ task.status.name }}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="extra content">
+                            <div class="ui fluid buttons">
+                                <a href="{% url 'ver-tarea' task.task_id %}" class="ui basic compact violet vertical animated button" tabindex="0">
+                                    <div class="hidden content">Ver tarea</div>
+                                    <div class="visible content">
+                                        <i class="eye icon"></i>
+                                    </div>
+                                </a>
+                                
+                                {% if not task.archive %}
+                                    <form action="" method="post" id="archivarForm" style="display: none;">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="archiveValue" value="1">
+                                        <input type="submit">
+                                    </form>
+                                    <button class="ui basic compact violet vertical animated button archive-btn" data-url="{% url 'archivar-tarea' task.task_id %}" tabindex="0">
+                                        <div class="hidden content">Archivar</div>
+                                        <div class="visible content">
+                                            <i class="archive icon"></i>
+                                        </div>
+                                    </button>
+                                {% endif %}
+                                
+                                <button class="ui basic compact violet vertical animated button delete-btn" data-url="{% url 'borrar-tarea' task.task_id %}" tabindex="0">
+                                    <div class="hidden content">Eliminar</div>
+                                    <div class="visible content">
+                                        <i class="eraser icon"></i>
+                                    </div>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    </div>
+
+    <div class="ui tiny modal" id="modalCategoryForm">
+        <i class="close icon"></i>
+        <div class="header">
+            Administrar categorías
+        </div>
+        <div class="content">
+            <div id="messageCategoryForm" class="ui message" style="display: none;"></div>
+            <form class="ui form" id="categoryForm">
+                <div class="inline field">
+                    <label>Nombre de la categoría</label>
+                    <input name="name" type="text">
+                    <input type="submit" value="Guardar" class="ui right floated approve button">
+                </div>
+            </form>
+
+            <div class="ui divider"></div>
+
+            <form class="ui form" id="categoryDeleteForm">
+                <div class="inline field">
+                    <label>Eliminar categoría</label>
+                    <select name="category" id="category" class="ui search dropdown">
+                        <option value="">Categoría</option>
+                        {% for category in categories %}
+                            <option value="{{ category.category_id }}"> {{ category.name }} </option>
+                        {% endfor %}
+                    </select>
+                    <input type="submit" value="Eliminar" class="ui right floated deny button">
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="ui basic modal" id="modalDeleteForm">
+        <div class="ui icon header">
+            <i class="eraser icon"></i>
+            Borrar tarea
+        </div>
+        <div class="content">
+            <p>¿Estás seguro de que deseas eliminar esta tarea?</p>
+        </div>
+        <div class="actions" style="display: flex; justify-content: right; gap: 10px;">
+            <button class="ui red basic cancel inverted button">
+                <i class="remove icon"></i> No
+            </button>
+            <form method="post" id="eliminarForm">
+                {% csrf_token %}
+                <button class="ui green ok inverted button" type="submit">
+                    <i class="checkmark icon"></i> Sí
+                </button>
+            </form>
+        </div>
+    </div>
+{% endblock content %}
+    

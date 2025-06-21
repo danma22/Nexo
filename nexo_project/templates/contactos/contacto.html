@@ -1,0 +1,232 @@
+{% extends 'layouts/base.html' %}
+
+{% block titulo %}
+    {{ contact.name }}
+{% endblock titulo %}
+
+
+{% block scripts %}
+    <script>
+        $(function(){
+            $('.ui.dropdown').dropdown();
+
+            $('.menu .item').tab();
+        });
+    </script>
+{% endblock scripts %}
+
+
+{% block content %}
+    {% include 'layouts/partials/menu.html' %}
+    
+    <div class="ui container">
+        <h2 class="ui center aligned icon header">
+            <i class="user outline icon"></i>
+            <div class="content">
+                {{ contact.name }}
+            </div>
+        </h2>
+
+        {# Mensajes #}
+        {% if messages %}
+            {% for message in messages %}
+                <div class="ui {{ message.tags }} message">
+                    <i class="close icon"></i>
+                    <div class="header">
+                        {% if message.tags == 'success' %}
+                            Operación exitosa
+                        {% elif message.tags == 'error' %}
+                            Ha ocurrido un error
+                        {% endif %}
+                    </div>
+                    <p>{{ message }}</p>
+                </div>
+            {% endfor %}
+        {% endif %}
+
+        <div class="ui piled segment">
+            <div class="ui two column very relaxed stackable grid">
+                <div class="column">
+                    <h4 class="ui dividing header">
+                        Datos del contacto
+                    </h4>
+
+                    <div class="ui relaxed divided list">
+                        <div class="item">
+                            <div class="header">Nombre:</div>
+                            {{ contact.name }}
+                        </div>
+                        <div class="item">
+                            <div class="header">Apellido Paterno:</div>
+                            {{ contact.last_name_p }}
+                        </div>
+                        <div class="item">
+                            <div class="header">Apellido Materno:</div>
+                            {{ contact.last_name_m }}
+                        </div>
+                        <div class="item">
+                            <div class="header">Grupo:</div>
+                            {% if contact.group %}
+                                {{ contact.group.name }}
+                            {% else %}
+                                -- Sin grupo --
+                            {% endif %}
+                        </div>
+                        <div class="item">
+                            <div class="header">Correo electrónico:</div>
+                            {{ contact.email }}
+                        </div>
+                        <div class="item">
+                            <div class="header">Perfil de Discord:</div>
+                            {% if contact.discord_account %}
+                                {{ contact.discord_account }}
+                            {% else %}
+                                -- Sin datos --
+                            {% endif %}
+                        </div>
+                        <div class="item">
+                            <div class="header">Perfil de Github:</div>
+                            {% if contact.github_account %}
+                                {{ contact.github_account }}
+                            {% else %}
+                                -- Sin datos --
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                <div class="column">
+                    <div class="ui top attached tabular menu">
+                        <a class="item active" data-tab="first">Domicilio</a>
+                        <a class="item" data-tab="second">Teléfono</a>
+                    </div>
+                    <div class="ui bottom attached tab segment active" data-tab="first">
+                        {% if contact.domicile %}
+                            <div class="ui relaxed divided list">
+                                <div class="item">
+                                    <div class="header">Dirección:</div>
+                                    {{ contact.domicile.address }}
+                                </div>
+                                <div class="item">
+                                    <div class="header">Ciudad:</div>
+                                    {{ contact.domicile.city }}
+                                </div>
+                                <div class="item">
+                                    <div class="header">Provincia:</div>
+                                    {% if contact.domicile.province %}
+                                        {{ contact.domicile.province }}
+                                    {% else %}
+                                        -- Sin especificar --
+                                    {% endif %}
+                                    
+                                </div>
+                                <div class="item">
+                                    <div class="header">País:</div>
+                                    {{ contact.domicile.country.name }}
+                                </div>
+                            </div>
+                            
+                            <form action="{% url 'borrar-domicilio' contact.contact_id contact.domicile.domicile_id %}" method="post">
+                                {% csrf_token %}
+                                <button class="ui red right floated button" type="submit">
+                                    Eliminar domicilio
+                                </button>
+                            </form>
+                            <br><br>
+                        {% else %}
+                            <div class="ui attached message">
+                                <i class="icon help"></i>
+                                Este contacto no tiene un domicilio, ¿deseas agregarle uno?
+                            </div>
+                            <form action="{% url 'ver-contacto' contact.pk %}" method="post" class="ui form attached fluid segment">
+                                {% csrf_token %}
+                                <input type="hidden" name="form_id" value="domicile">
+                                <div class="field">
+                                    {{ domicile_form.address.label_tag }}
+                                    {{ domicile_form.address }}
+                                    {{ domicile_form.address.errors }}
+                                </div>
+                                <div class="three fields">
+                                    <div class="field">
+                                        {{ domicile_form.city.label_tag }}
+                                        {{ domicile_form.city }}
+                                        {{ domicile_form.city.errors }}
+                                    </div>
+                                    <div class="field">
+                                        {{ domicile_form.province.label_tag }}
+                                        {{ domicile_form.province }}
+                                        {{ domicile_form.province.errors }}
+                                    </div>
+                                    <div class="field">
+                                        {{ domicile_form.country.label_tag }}
+                                        <div class="ui fluid search selection dropdown">
+                                            <input type="hidden" name="domicile-country">
+                                            <i class="dropdown icon"></i>
+                                            <div class="default text">Seleccionar país</div>
+                                            <div class="menu">
+                                                {% for country in domicile_form.country.field.queryset %}
+                                                    <div class="item" data-value="{{ country.country_id }}"><i class="{{ country.code_flag }} flag"></i>{{ country.name }}</div>
+                                                {% endfor %}
+                                                
+                                            </div>
+                                        </div>
+                                        {{ domicile_form.country.errors }}
+                                    </div>
+                                </div>
+                                <input type="submit" value="Agregar domicilio" class="ui violet right floated button">
+                                <br><br>
+                            </form>
+                        {% endif %}
+                    </div>
+                    <div class="ui bottom attached tab segment" data-tab="second">
+                        {% if contact.phone_number %}
+                            <div class="ui relaxed divided list">
+                                <div class="item">
+                                    <div class="header">Teléfono:</div>
+                                    {% if contact.phone_number.country_code %}+{{ contact.phone_number.country_code }}{% endif %} {{ contact.phone_number.phone_number }}
+                                </div>
+                            </div>
+                            
+                            <form action="{% url 'borrar-telefono' contact.contact_id contact.phone_number.phone_id %}" method="post">
+                                {% csrf_token %}
+                                <button class="ui red right floated button" type="submit">
+                                    Eliminar teléfono
+                                </button>
+                            </form>
+                            <br><br>
+                        {% else %}
+                            <div class="ui attached message">
+                                <i class="icon help"></i>
+                                Este contacto no tiene un teléfono, ¿deseas agregarle uno?
+                            </div>
+                            <form action="{% url 'ver-contacto' contact.pk %}" method="post" class="ui form attached fluid segment">
+                                {% csrf_token %}
+                                <input type="hidden" name="form_id" value="phone">
+                                <div class="two fields">
+                                    <div class="field">
+                                        {{ phone_form.country_code.label_tag }}
+                                        {{ phone_form.country_code }}
+                                        {{ phone_form.country_code.errors }}
+                                    </div>
+                                    <div class="field">
+                                        {{ phone_form.phone_number.label_tag }}
+                                        {{ phone_form.phone_number }}
+                                        {{ phone_form.phone_number.errors }}
+                                    </div>
+                                </div>
+                                <input type="submit" value="Agregar teléfono" class="ui violet right floated button">
+                                <br><br>
+                            </form>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            <div class="ui vertical divider"></div>
+        </div>
+
+        <a href="{% url 'contactos' %}" class="ui right floated red button">
+            Regresar
+        </a>
+    </div>
+    
+{% endblock content %}
+    

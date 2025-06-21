@@ -1,0 +1,15 @@
+<div class="ui violet menu">
+    <div class="header item">
+        <i class="book icon"></i>
+        Nexo
+    </div>
+    <a href="{% url 'index' %}" class="item">
+        Inicio
+    </a>
+    <a href="{% url 'contactos' %}" class="item {% if active_page == 'contactos' %}active{% endif %}">
+        Contactos
+    </a>
+    <a href="{% url 'organizador' %}" class="item {% if active_page == 'organizador' %}active{% endif %}">
+        Organizador
+    </a>
+</div>

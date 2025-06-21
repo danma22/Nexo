@@ -1,0 +1,99 @@
+{% extends 'layouts/base.html' %}
+
+
+{% block titulo %}
+    Viendo tarea
+{% endblock titulo %}    
+
+
+{% block content %}
+    {% include 'layouts/partials/menu.html' %}
+
+    <div class="ui container">
+        
+        <h2 class="ui center aligned icon header">
+            <i class="sticky note outline icon"></i>
+            <div class="content">
+                Datos de la tarea
+            </div>
+        </h2>
+
+        {# Mensajes #}
+        {% if messages %}
+            {% for message in messages %}
+                <div class="ui {{ message.tags }} message">
+                    <i class="close icon"></i>
+                    <div class="header">
+                        {% if message.tags == 'success' %}
+                            Operación exitosa
+                        {% elif message.tags == 'error' %}
+                            Ha ocurrido un error
+                        {% endif %}
+                    </div>
+                    <p>{{ message }}</p>
+                </div>
+            {% endfor %}
+        {% endif %}
+
+        <div class="ui piled segment">
+            <div class="ui two column very relaxed stackable grid">
+                <div class="column">
+                    <h3 class="ui dividing header">
+                        {{ task.title }}
+                    </h3>
+
+                    <div class="ui relaxed divided list">
+                        <div class="item">
+                            <div class="header">Categoría:</div>
+                            {% if task.category %}
+                                {{ task.category.name }}
+                            {% else %}
+                                -- Sin categoría --
+                            {% endif %}
+                        </div>
+                        <div class="item">
+                            <div class="header">Estatus:</div>
+                            {{ task.status.name }}
+                        </div>
+                        <div class="item">
+                            <div class="header">Creado el:</div>
+                            {{ task.creation_date }}
+                        </div>
+                        <div class="item">
+                            <div class="ui equal width grid">
+                                {% if task.status.status_id != 2 %}
+                                    <div class="column">
+                                        <form action="{% url 'ver-tarea' task.task_id %}" method="post">
+                                            {% csrf_token %}
+                                            <input type="submit" class="ui blue fluid button" value="Terminar tarea">
+                                        </form>
+                                    </div>
+                                {% endif %}
+
+                                <div class="column">
+                                    <a href="{% url 'editar-tarea' task.task_id %}" class="ui fluid button">
+                                        Editar tarea
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="column">
+                    <div class="ui relaxed divided list">
+                        <div class="item">
+                            <div class="header">Descripción:</div>
+                            {{ task.description }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="ui vertical divider"></div>
+        </div>
+
+        <a href="{% url 'organizador' %}" class="ui right floated red button">
+            Regresar
+        </a>
+    </div>
+{% endblock content %}
+    

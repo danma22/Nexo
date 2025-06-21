@@ -1,0 +1,166 @@
+{% extends 'layouts/base.html' %}
+
+{% block titulo %}
+    Archivados
+{% endblock titulo %}
+
+
+{% block scripts %}
+    <script>
+        $(function(){
+            $('.ui.dropdown').dropdown();
+        })
+    </script>
+{% endblock scripts %}
+    
+
+{% block styles %}
+    <style>
+        .truncate {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+        }
+    </style>
+{% endblock styles %}
+
+
+{% block content %}
+    {% include 'layouts/partials/menu.html' %}
+
+    <div class="ui container">
+        <h2 class="ui center aligned icon header">
+            <i class="archive icon"></i>
+            <div class="content">
+                Archivados
+            </div>
+        </h2>
+
+        {# Mensajes #}
+        {% if messages %}
+            {% for message in messages %}
+                <div class="ui {{ message.tags }} message">
+                    <i class="close icon"></i>
+                    <div class="header">
+                        {% if message.tags == 'success' %}
+                            Operación exitosa
+                        {% elif message.tags == 'error' %}
+                            Ha ocurrido un error
+                        {% endif %}
+                    </div>
+                    <p>{{ message }}</p>
+                </div>
+            {% endfor %}
+        {% endif %}
+
+        <div class="ui divider"></div>
+        
+        <div class="ui stackable grid">
+            <div class="right floated right aligned column">
+                <a href="{% url 'organizador' %}" class="ui red button">
+                    Regresar
+                </a>
+            </div>
+        </div>
+
+        {# Filtros #}
+        <form method="get" class="ui form">
+            <div class="five fields">
+                <div class="field">
+                    {{ tasksFiltered.form.title.label_tag}}
+                    <div class="ui icon input">
+                        {% comment %} <input type="text" placeholder="Search..."> {% endcomment %}
+                        {{ tasksFiltered.form.title }}
+                        <i class="search icon"></i>
+                    </div>
+                    {{ tasksFiltered.form.title.errors }}
+                </div>
+                <div class="field">
+                    {{ tasksFiltered.form.category.label_tag }}
+                    {{ tasksFiltered.form.category }}
+                    {{ tasksFiltered.form.category.errors }}
+                </div>
+                <div class="field">
+                    {{ tasksFiltered.form.status.label_tag }}
+                    {{ tasksFiltered.form.status }}
+                    {{ tasksFiltered.form.status.errors }}
+                </div>
+                <div class="field" style="align-self: flex-end;">
+                    <button class="ui fluid button" type="submit">
+                        <i class="filter icon"></i>
+                        Filtrar
+                    </button>
+                </div>
+                <div class="field" style="align-self: flex-end;">
+                    <a href="{% url 'archivados' %}" class="ui fluid button" id="cleanFilter">
+                        Limpiar filtro
+                    </a>
+                </div>
+            </div>
+        </form>
+
+        {# Tareas #}
+        {% if not tasksFiltered.qs %}
+            {# Mensaje de tareas vacías #}
+            <div class="ui icon message">
+                <i class="huge icons" style="margin-right: 10px;">
+                    <i class="sticky note outline icon"></i>
+                    <i class="top right corner question circle icon"></i>
+                </i>
+                <div class="content">
+                    <div class="header">
+                        Nada por aquí
+                    </div>
+                    <p>No se encontraron tareas archivadas.</p>
+                </div>
+            </div>
+        {% else %}
+            <div class="ui three stackable cards">
+                {% for task in tasksFiltered.qs %}
+                    <div class="card">
+                        <div class="content">
+                            <div class="header">{{ task.title }}</div>
+                            <div class="meta">
+                                <span>Creado el {{ task.creation_date }}</span>
+                            </div>
+                        </div>
+                        <div class="content">
+                            <h4 class="ui sub header">Descripción</h4>
+                            <p class="truncate">{{ task.description }}</p>
+                            <div class="ui labels">
+                                {% if task.category %}
+                                    <div class="ui horizontal label">{{ task.category.name }}</div>
+                                {% endif %}
+                                <div class="ui {{ task.status.color }} horizontal label">
+                                    {% if task.status.status_id == 1 %}
+                                        <i class="hourglass half icon"></i>
+                                    {% elif task.status.status_id == 2 %}
+                                        <i class="check icon"></i>
+                                    {% else %}
+                                        <i class="archive icon"></i>
+                                    {% endif %}
+                                    {{ task.status.name }}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="extra content">
+                            <form action="{% url 'archivar-tarea' task.task_id %}" method="post">
+                                {% csrf_token %}
+                                <input type="hidden" name="archiveValue" value="0">
+                                <button class="ui fluid basic compact violet vertical animated button archive-btn" type="submit" tabindex="0">
+                                    <div class="hidden content">Desarchivar</div>
+                                    <div class="visible content">
+                                        <i class="dropbox icon"></i>
+                                    </div>
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    </div>
+{% endblock content %}
+    

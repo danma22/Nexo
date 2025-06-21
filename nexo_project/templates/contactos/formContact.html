@@ -1,0 +1,101 @@
+{% extends 'layouts/base.html' %}
+
+{% block titulo %}
+    {{ title }}
+{% endblock titulo %}
+
+
+{% block scripts %}
+    <script>
+        $(function(){
+            $('.ui.dropdown').dropdown();
+            $('.ui.checkbox').checkbox();
+        });
+    </script>
+{% endblock scripts %}
+    
+
+{% block content %}
+    {% include 'layouts/partials/menu.html' %}
+
+    <div class="ui container">
+
+        
+        {% if newContact %}
+            <h3 class="ui center aligned icon header">
+                <i class="address book icon"></i>
+                Nuevo contacto
+                <div class="sub header">Crea un nuevo contacto. Los campos marcados (*) son obligatorios</div>
+            </h3>
+        {% else %}
+            <h3 class="ui center aligned icon header">
+                <i class="address book icon"></i>
+                Editar contacto
+                <div class="sub header">Edita este contacto. Los campos marcados (*) son obligatorios</div>
+            </h3>
+        {% endif %}
+
+        <div class="ui piled segment">
+            <form action="{% if newContact %} {% url 'crear-contacto' %} {% else %} {% url 'editar-contacto' contact.contact_id %} {% endif %}" method="post" class="ui form">
+                {% csrf_token %}
+                <div class="field">
+                    {{ form.name.label_tag }}
+                    <div class="three fields">
+                        <div class="field">
+                            {{ form.name }}
+                            {{ form.name.errors }}
+                        </div>
+                        <div class="field">
+                            {{ form.last_name_p }}
+                            {{ form.last_name_p.errors }}
+                        </div>
+                        <div class="field">
+                            {{ form.last_name_m }}
+                            {{ form.last_name_m.errors }}
+                        </div>
+                    </div>
+                </div>
+                <div class="two fields">
+                    <div class="field">
+                        {{ form.email.label_tag }}
+                        {{ form.email }}
+                        {{ form.email.errors }}
+                    </div>
+                    <div class="field">
+                        {{ form.group.label_tag }}
+                        {{ form.group }}
+                        {{ form.group.errors }}
+                    </div>
+                </div>
+                <div class="two fields">
+                    <div class="field">
+                        {{ form.discord_account.label_tag }}
+                        {{ form.discord_account }}
+                        {{ form.discord_account.errors }}
+                    </div>
+                    <div class="field">
+                        {{ form.github_account.label_tag }}
+                        {{ form.github_account }}
+                        {{ form.github_account.errors }}
+                    </div>
+                </div>
+
+                {% if form.instance.group %}
+                    <div class="inline field">
+                        <div class="ui checkbox">
+                            {{ form.remove_group }}
+                            {{ form.remove_group.label_tag }}
+                        </div>
+                    </div>
+                {% endif %}
+
+                <div class="ui right aligned basic segment">
+                    <a href="{% url 'contactos' %}" class="ui negative button">Cancelar</a>
+                    <input class="ui positive button" type="submit" value="{% if newContact %} Guardar {% else %} Actualizar {% endif %}">
+                </div>
+            </form>
+        </div>
+        
+    </div>
+{% endblock content %}
+    

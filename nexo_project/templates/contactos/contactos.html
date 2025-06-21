@@ -1,0 +1,313 @@
+{% extends 'layouts/base.html' %}
+
+{% block titulo %}
+    Contactos
+{% endblock titulo %}
+
+
+{% block scripts %}
+    <script>
+        $(function(){
+            $('.ui.dropdown').dropdown();
+
+            $('#btnGroup').on('click', function() {
+                $('#groupForm')[0].reset();
+                $('#group').dropdown('clear');
+                $('#messageGroupForm').removeClass('success error')
+                $('#messageGroupForm').hide()
+                $('#modalGroupForm').modal('show');
+            });
+
+            $('#groupDeleteForm').submit(function(e){
+                e.preventDefault()
+
+                $.ajax({
+                    url: '{% url "borrar-grupo" %}',
+                    type: 'POST',
+                    data: {
+                        group_id: $('#group').val(),
+                        csrfmiddlewaretoken: '{{ csrf_token }}'
+                    },
+                    success: function(response) {
+                        if (response.success) {
+                            $('#messageGroupForm').removeClass('error')
+                            $('#messageGroupForm').addClass('success');
+                            $('#messageGroupForm').text(response.message).show();
+                            $('#group').dropdown('clear');
+                            $('#group').dropdown('remove selected', response.id)
+
+                            setTimeout(function() {
+                                $('#messageGroupForm').hide()
+                                window.location.replace("{% url 'contactos' %}");
+                            }, 1000);
+                        } else {
+                            $('#messageGroupForm').removeClass('success')
+                            $('#messageGroupForm').addClass('error')
+                            $('#messageGroupForm').text(response.message).show();
+                        }
+                    },
+                    error: function(response) {
+                        $('#messageGroupForm').removeClass('success')
+                        $('#messageGroupForm').addClass('error')
+                        $('#messageGroupForm').text('Error al borrar el grupo.').show();
+                    }
+                })
+            });
+
+            $('#groupForm').submit(function(e){
+                e.preventDefault();
+
+                $.ajax({
+                    url: '{% url "crear-grupo" %}',
+                    type: 'POST',
+                    data: {
+                        name: $('#nameGroup').val(),
+                        csrfmiddlewaretoken: '{{ csrf_token }}'
+                    },
+                    success: function(response) {
+                        if (response.success) {
+                            $('#messageGroupForm').removeClass('error')
+                            $('#messageGroupForm').addClass('success');
+                            $('#messageGroupForm').text(response.message).show();
+                            $('#groupForm')[0].reset();
+
+                            setTimeout(function() {
+                                $('#messageGroupForm').hide()
+                                window.location.replace("{% url 'contactos' %}");
+                            }, 1000);
+                        } else {
+                            $('#messageGroupForm').removeClass('success')
+                            $('#messageGroupForm').addClass('error')
+                            $('#messageGroupForm').text(response.message).show();
+                        }
+                    },
+                    error: function() {
+                        $('#messageGroupForm').removeClass('success')
+                        $('#messageGroupForm').addClass('error')
+                        $('#messageGroupForm').text('Error al crear el grupo.').show();
+                    }
+                });
+            });
+
+            $('.delete-btn').click(function(e){
+                var name = $(this).data('name')
+                var url = $(this).data('url')
+
+                $('#nombre-contacto').text(name)
+                $('#eliminarForm').attr('action', url)
+                $('#modalDeleteForm').modal('show')
+            });
+        });
+    </script>
+{% endblock scripts %}
+    
+
+{% block content %}
+    {% include 'layouts/partials/menu.html' %}
+
+    <div class="ui container">
+        <div class="ui stackable grid">
+            {# Encabezado de la pagina #}
+            <div class="left floated left aligned six wide column">
+                <h2 class="ui header">
+                    <i class="address book icon"></i>
+                    <div class="content">
+                        Contactos
+                    </div>
+                </h2>
+            </div>
+            
+            {# Fila de botones #}
+            <div class="right floated right aligned ten wide column">
+                <button class="ui violet button" id="btnGroup">
+                    <i class="users icon"></i>
+                    Grupos
+                </button>
+
+                <div class="ui labeled button" tabindex="0">
+                    <a href="{% url 'crear-contacto' %}" class="ui violet button">
+                        <i class="address book outline icon"></i> Añadir contacto
+                    </a>
+                    <a class="ui basic left pointing violet label">
+                        {{ contactsFiltered.qs|length }}
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="ui divider"></div>
+
+        {# Mensajes #}
+        {% if messages %}
+            {% for message in messages %}
+                <div class="ui {{ message.tags }} message">
+                    <i class="close icon"></i>
+                    <div class="header">
+                        {% if message.tags == 'success' %}
+                            Operación exitosa
+                        {% elif message.tags == 'error' %}
+                            Ha ocurrido un error
+                        {% endif %}
+                    </div>
+                    <p>{{ message }}</p>
+                </div>
+            {% endfor %}
+        {% endif %}
+
+
+        {# Filtros #}
+        <form method="get" class="ui form">
+            <div class="six fields">
+                <div class="field">
+                    {{ contactsFiltered.form.name.label_tag}}
+                    {{ contactsFiltered.form.name }}
+                    {{ contactsFiltered.form.name.errors }}
+                </div>
+                <div class="field" style="align-self: flex-end;">
+                    {{ contactsFiltered.form.last_name_p }}
+                    {{ contactsFiltered.form.last_name_p.errors }}
+                </div>
+                <div class="field" style="align-self: flex-end;">
+                    {{ contactsFiltered.form.last_name_m }}
+                    {{ contactsFiltered.form.last_name_m.errors }}
+                </div>
+                    
+                <div class="field">
+                    {{ contactsFiltered.form.group.label_tag }}
+                    {{ contactsFiltered.form.group }}
+                    {{ contactsFiltered.form.group.errors }}
+                </div>
+                <div class="field" style="align-self: flex-end;">
+                    <button class="ui fluid button" type="submit">
+                        <i class="filter icon"></i>
+                        Filtrar
+                    </button>
+                </div>
+                <div class="field" style="align-self: flex-end;">
+                    <a href="{% url 'contactos' %}" class="ui fluid button">
+                        Limpiar filtro
+                    </a>
+                </div>
+            </div>
+        </form>
+
+        
+        {% if not contactsFiltered.qs  %}
+            {# Mensaje de tabla vacía #}
+            <div class="ui icon message">
+                <i class="huge icons" style="margin-right: 10px;">
+                    <i class="address book outline icon"></i>
+                    <i class="corner question circle icon"></i>
+                </i>
+                <div class="content">
+                    <div class="header">
+                        ¿No hay nadie?
+                    </div>
+                    <p>No se encontraron contactos registrados.</p>
+                </div>
+            </div>
+        {% else %}
+            {# Tabla de contactos  #}
+            <table class="ui striped table">
+                <thead>
+                    <th>Persona</th>
+                    <th>Grupo</th>
+                    <th>Email</th>
+                    <th>Acciones</th>
+                </thead>
+                <tbody>
+                    {% for contact in contactsFiltered.qs  %}
+                        <tr>
+                            <td>
+                                <h4 class="ui header">
+                                    <i class="user outline icon"></i>
+                                    <div class="content">
+                                        {{ contact.name }} {{ contact.last_name_p }} {{ contact.last_name_m }} 
+                                        <div class="sub header">{{ contact.group.name }}</div>
+                                    </div>
+                                </h4>
+                            </td>
+                            <td>
+                                {% if contact.group %}
+                                    {{ contact.group.name }}
+                                {% else %}
+                                    -- Sin grupo --
+                                {% endif %}
+                            </td>
+                            <td>
+                                {{ contact.email }}
+                            </td>
+                            <td class="center aligned">
+                                <div class="ui icon buttons">
+                                    <a href="{% url 'ver-contacto' contact.contact_id %}" class="ui basic violet button" data-tooltip="Mostrar" data-inverted="">
+                                        <i class="eye icon"></i>
+                                    </a>
+                                    <a href="{% url 'editar-contacto' contact.contact_id %}" class="ui basic violet button" data-tooltip="Editar" data-inverted="">
+                                        <i class="edit outline icon"></i>
+                                    </a>
+                                    <button class="ui basic violet button delete-btn" data-url="{% url 'borrar-contacto' contact.contact_id %}" data-name="{{ contact.name }} {{ contact.last_name_p }} {{ contact.last_name_m }}" data-tooltip="Eliminar" data-inverted="">
+                                        <i class="eraser icon"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% endif %}
+    </div>
+
+    <div class="ui tiny modal" id="modalGroupForm">
+        <i class="close icon"></i>
+        <div class="header">
+            Administrar grupos
+        </div>
+        <div class="content">
+            <div id="messageGroupForm" class="ui message" style="display: none;"></div>
+            <form class="ui form" id="groupForm">
+                <div class="inline field">
+                    <label>Nombre del grupo</label>
+                    <input name="name" type="text" id="nameGroup">
+                    <input type="submit" value="Guardar" class="ui right floated approve button">
+                </div>
+            </form>
+
+            <div class="ui divider"></div>
+
+            <form class="ui form" id="groupDeleteForm">
+                <div class="inline field">
+                    <label>Eliminar grupo</label>
+                    <select name="group" id="group" class="ui search dropdown">
+                        <option value="">Grupo</option>
+                        {% for group in groups %}
+                            <option value="{{ group.group_id }}"> {{ group.name }} </option>
+                        {% endfor %}
+                    </select>
+                    <input type="submit" value="Eliminar" class="ui right floated deny button">
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="ui basic modal" id="modalDeleteForm">
+        <div class="ui icon header">
+            <i class="eraser icon"></i>
+            Borrar contacto
+        </div>
+        <div class="content">
+            <p>¿Estás seguro de que deseas eliminar a <strong id="nombre-contacto"></strong>?</p>
+        </div>
+        <div class="actions" style="display: flex; justify-content: right; gap: 10px;">
+            <button class="ui red basic cancel inverted button">
+                <i class="remove icon"></i> No
+            </button>
+            <form method="post" id="eliminarForm">
+                {% csrf_token %}
+                <button class="ui green ok inverted button" type="submit">
+                    <i class="checkmark icon"></i> Sí
+                </button>
+            </form>
+        </div>
+    </div>
+{% endblock content %}
+    
